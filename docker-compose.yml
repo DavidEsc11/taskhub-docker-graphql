@@ -1,0 +1,34 @@
+# Orquesta los 3 servicios con un solo comando:  docker compose up --build
+# Docker crea una red interna donde los contenedores se ven por su nombre.
+services:
+  mongo:
+    image: mongo:7
+    container_name: taskhub-mongo
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db        # los datos sobreviven aunque se borre el contenedor
+
+  backend:
+    build: ./backend
+    container_name: taskhub-backend
+    restart: unless-stopped
+    environment:
+      PORT: 4000
+      MONGO_URI: mongodb://mongo:27017/taskhub   # "mongo" = nombre del servicio de arriba
+      JWT_SECRET: ${JWT_SECRET:-cambia-este-secreto-en-produccion}
+    depends_on:
+      - mongo
+    ports:
+      - "4000:4000"                # expone GraphQL para probarlo directamente
+
+  frontend:
+    build: ./frontend
+    container_name: taskhub-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"                  # la app se abre en http://localhost:8080
+
+volumes:
+  mongo_data:
